@@ -1,21 +1,21 @@
 import json
 import hashlib
-from .db import get_latest_dom_signature, save_dom_signature
+from scraper.services.database.db_service import DBService
 
 class SignatureService:
-    def __init__(self, db):
-        self.db = db
+    def __init__(self, db_service: DBService):
+        self.db_service = db_service  # instance of DBService
 
     def build_mini_dom(self, response, params):
         mini_dom = {}
         for param in params:
-            selector = param.get("selector")
-            selected_elements = response.css(selector)
+            css_path = param.get("css_path")  # use the CSS path from DB
+            selected_elements = response.css(css_path)
             tags = [el.root.tag for el in selected_elements] if selected_elements else []
             mini_dom[param['param_name']] = {
-                "selector": selector,
-                "count": len(selected_elements), # how many nodes matched
-                "tags": tags                     # type of HTML elements found
+                "css_path": css_path,
+                "count": len(selected_elements),
+                "tags": tags
             }
         return mini_dom
 
@@ -24,8 +24,11 @@ class SignatureService:
         return hashlib.sha256(serialized.encode()).hexdigest()
 
     def compare_and_update(self, industry_module_url_id, new_signature):
-        old_signature = get_latest_dom_signature(self.db, industry_module_url_id)
-        if old_signature is None or old_signature != new_signature:
-            save_dom_signature(self.db, industry_module_url_id, new_signature)
-            return old_signature is not None  # True if changed, False if first time
-        return False # no change
+        old_signature = self.db_service.get_latest_dom_signature(industry_module_url_id)
+        
+        if old_signature != new_signature:
+            self.db_service.save_dom_signature(industry_module_url_id, new_signature)
+            return True  # DOM changed
+        else:
+            self.db_service.update_last_checked(industry_module_url_id)
+            return False  # DOM did not change

@@ -1,41 +1,41 @@
 import scrapy, json
-from scraper.services.db_service import DBService
+from scraper.services.database.db_service import DBService
 from scraper.transformers.transformers import TRANSFORMER_FUNCTIONS
 from scraper.services.signature_service import SignatureService
 from scraper.items import GenericScrapedItem
+
+from scraper.constants import INDUSTRY_URL_ID, INDUSTRY_NAME, MODULE_NAME, PARAMETER_CONFIGS, URL, SCRAPED_DATA
 
 
 class GenericSpider(scrapy.Spider):
     name = "generic_spider"
 
-    def start_requests(self):
+    async def start(self):
+        print("Start Spider requests")
+
         self.db_service = DBService()
-        self.signature_service = SignatureService(self.db_service.get_db_connection())
+        self.signature_service = SignatureService(self.db_service)
 
-        urls_data = self.db_service.get_url_configs()
+        url_map, params_map = self.db_service.get_urls_with_params()
 
-        for data in urls_data:
-            module_url_id = data.get('industry_module_url_id')
-            if not module_url_id:
-                raise ValueError(f"URL data missing ID field: {data}")
-
-            params = self.db_service.get_params(module_url_id)
-
+        for url_id, url_data in url_map.items():
             yield scrapy.Request(
-                url=data['url'],
+                url=url_data["url"],
                 meta={
-                    "industry_module_url_id": module_url_id,
-                    "industry_name": data.get("industry_name"),
-                    "module_name": data.get("module_name"),
-                    "params": params
-                }
+                    INDUSTRY_URL_ID: url_id,
+                    INDUSTRY_NAME: url_data[INDUSTRY_NAME],
+                    MODULE_NAME: url_data[MODULE_NAME],
+                    PARAMETER_CONFIGS: params_map[url_id]
+                },
+                callback=self.parse
             )
 
     def parse(self, response):
-        params = response.meta['params']
-        industry_module_url_id = response.meta['industry_module_url_id']
-        industry_name = response.meta['industry_name']
-        module_name = response.meta['module_name']
+        print("Parsing response for URL:", response.url)
+        params = response.meta[PARAMETER_CONFIGS]
+        industry_module_url_id = response.meta[INDUSTRY_URL_ID]
+        industry_name = response.meta[INDUSTRY_NAME]
+        module_name = response.meta[MODULE_NAME]
 
         # Mini DOM + signature
         mini_dom = self.signature_service.build_mini_dom(response, params)
@@ -46,6 +46,9 @@ class GenericSpider(scrapy.Spider):
             industry_module_url_id,
             new_signature
         )
+
+        print("DOM Changed:", dom_changed)
+
         if dom_changed:
             self.logger.info(f"DOM changed for URL ID {industry_module_url_id}. Skipping scrape.")
             return
@@ -55,8 +58,8 @@ class GenericSpider(scrapy.Spider):
         # Extract & transform data
         processed_data = {}
         for param in params:
-            selector = param.get("selectors") or param.get("selector")
-            raw_html = response.css(selector).xpath("string()").get()
+            css_path = param.get("css_path")
+            raw_html = response.css(css_path).xpath("string()").get()
             if raw_html:
                 raw_html = raw_html.strip()
 
@@ -67,10 +70,10 @@ class GenericSpider(scrapy.Spider):
 
         # Yield an Item
         item = GenericScrapedItem()
-        item['industry_name'] = industry_name
-        item['module_name'] = module_name
-        item['url'] = response.url
-        item['scraped_data'] = processed_data
+        item[INDUSTRY_NAME] = industry_name
+        item[MODULE_NAME] = module_name
+        item[URL] = response.url
+        item[SCRAPED_DATA] = processed_data
 
         yield item
 
