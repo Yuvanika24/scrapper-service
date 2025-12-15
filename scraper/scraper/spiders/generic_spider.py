@@ -3,14 +3,12 @@ from scraper.services.database.db_service import DBService
 from scraper.transformers.transformers import TRANSFORMER_FUNCTIONS
 from scraper.services.signature_service import SignatureService
 from scraper.items import GenericScrapedItem
-
-from scraper.constants import INDUSTRY_URL_ID, INDUSTRY_NAME, MODULE_NAME, PARAMETER_CONFIGS, URL, SCRAPED_DATA
-
+from scraper.constants import INDUSTRY_URL_ID, INDUSTRY_NAME, MODULE_NAME, PARAMETER_CONFIGS, URL, SCRAPED_DATA, HEADERS
 
 class GenericSpider(scrapy.Spider):
     name = "generic_spider"
 
-    async def start(self):
+    def start_requests(self):
         print("Start Spider requests")
 
         self.db_service = DBService()
@@ -18,6 +16,7 @@ class GenericSpider(scrapy.Spider):
 
         url_map, params_map = self.db_service.get_urls_with_params()
 
+        # Yield all URLs
         for url_id, url_data in url_map.items():
             yield scrapy.Request(
                 url=url_data["url"],
@@ -27,11 +26,14 @@ class GenericSpider(scrapy.Spider):
                     MODULE_NAME: url_data[MODULE_NAME],
                     PARAMETER_CONFIGS: params_map[url_id]
                 },
-                callback=self.parse
+                callback=self.parse,
+                headers=HEADERS,
+                dont_filter=True
             )
 
     def parse(self, response):
         print("Parsing response for URL:", response.url)
+
         params = response.meta[PARAMETER_CONFIGS]
         industry_module_url_id = response.meta[INDUSTRY_URL_ID]
         industry_name = response.meta[INDUSTRY_NAME]
@@ -41,14 +43,8 @@ class GenericSpider(scrapy.Spider):
         mini_dom = self.signature_service.build_mini_dom(response, params)
         new_signature = self.signature_service.calculate_signature(mini_dom)
 
-        # Skip scraping if DOM changed
-        dom_changed = self.signature_service.compare_and_update(
-            industry_module_url_id,
-            new_signature
-        )
-
+        dom_changed = self.signature_service.compare_and_update(industry_module_url_id, new_signature)
         print("DOM Changed:", dom_changed)
-
         if dom_changed:
             self.logger.info(f"DOM changed for URL ID {industry_module_url_id}. Skipping scrape.")
             return
@@ -57,24 +53,34 @@ class GenericSpider(scrapy.Spider):
 
         # Extract & transform data
         processed_data = {}
+
         for param in params:
-            css_path = param.get("css_path")
-            raw_html = response.css(css_path).xpath("string()").get()
+            selector = param.get("css_path")
+            raw_html = None
+
+            if selector:
+                # XPath selector
+                if selector.startswith("//"):
+                    raw_html = response.xpath(selector).get()
+                # CSS selector
+                else:
+                    raw_html = response.css(selector).xpath("string()").get()
+
             if raw_html:
                 raw_html = raw_html.strip()
-
             transformer_string = param.get("transformer")
-            processed_data[param['param_name']] = self.apply_transformers(raw_html, transformer_string)
+            processed_data[param['param_name']] = self.apply_transformers(
+                raw_html, transformer_string
+            )
 
         print(json.dumps(processed_data, indent=2, ensure_ascii=False))
 
-        # Yield an Item
+        # Yield item
         item = GenericScrapedItem()
         item[INDUSTRY_NAME] = industry_name
         item[MODULE_NAME] = module_name
         item[URL] = response.url
         item[SCRAPED_DATA] = processed_data
-
         yield item
 
     def apply_transformers(self, value, transformer_string):

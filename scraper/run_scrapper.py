@@ -30,7 +30,16 @@ def main():
     match (industry, module):
         case ("Solar", "Market Analysis"):
             print(f"\nRunning {industry} - {module}...\n")
-            process = CrawlerProcess(get_project_settings())
+            settings = get_project_settings()
+            settings.set("FEEDS", {
+                "scraped_output.json": {
+                    "format": "json",
+                    "encoding": "utf8",
+                    "indent": 2,
+                    "overwrite": True
+                }
+            })
+            process = CrawlerProcess(settings)
             process.crawl(GenericSpider)
             process.start()
         case _:
