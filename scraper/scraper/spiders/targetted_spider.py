@@ -1,9 +1,9 @@
 import scrapy, json
 from scraper.services.database.db_service import DBService
-from transformers.transformers import TRANSFORMER_FUNCTIONS
 from scraper.services.signature_service import SignatureService
 from scraper.items import TargettedScrapedItem
 from scraper.constants import INDUSTRY_URL_ID, INDUSTRY_NAME, MODULE_NAME, PARAMETER_CONFIGS, URL, SCRAPED_DATA, HEADERS
+from scraper.transformers.transformers import TRANSFORMER_FUNCTIONS
 
 class TargettedSpider(scrapy.Spider):
     name = "targetted_spider"

@@ -1,9 +1,9 @@
 from lxml import html
-from transformers.transformers import text_clean
+from scraper.transformers.transformers import text_clean
 
-def scrape_page_with_xpath(response, keyword):
+def scrape_page_with_xpath(url, keyword):
 
-    tree = html.fromstring(response.text)
+    tree = html.fromstring(url)
 
     words = keyword.lower().split()
     result = []
@@ -27,7 +27,7 @@ def scrape_page_with_xpath(response, keyword):
             if content not in seenContent:
                 result.append(
                     {
-                        "url": response.url,
+                        "url": url,
                         "xpath": node_xpath,
                         "keyword": word,
                         "content": content[:200] + "...", # Truncates to 200 characters
