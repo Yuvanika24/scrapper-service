@@ -34,9 +34,6 @@ class BroaderSpider(scrapy.Spider):
         print(f"Keywords for Industry: {self.industry}, Module: {self.module}")
         print("industry_module_id:", industry_module_id)
 
-        # total_items = 0
-        # MAX_ITEMS = 2  # total requests across all keywords
-
         for keyword in keywords:
             try:
                 links = get_cse_results(keyword)
@@ -45,9 +42,6 @@ class BroaderSpider(scrapy.Spider):
                 continue
 
             for url in links:
-                # if total_items >= MAX_ITEMS:
-                #     return
-                # total_items += 1
 
                 yield scrapy.Request(
                     url=url,
@@ -60,6 +54,8 @@ class BroaderSpider(scrapy.Spider):
     def parse(self, response):
         keyword = response.meta["keyword"]
         industry_module_id = response.meta["industry_module_id"]
+
+        print("response:", response)
 
         results = scrape_page_with_xpath(response.url, keyword)
 
