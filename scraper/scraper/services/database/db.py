@@ -3,45 +3,59 @@
 def get_urls_with_params():
     return """
     SELECT 
-        industry_module_urls.id AS industry_module_url_id,
-        industries.name AS industry_name,
-        modules.name AS module_name,
-        urls.url AS url,
-        url_parameters.param_name,
-        url_parameters.css_path,
-        url_parameters.transformers
-    FROM industry_module_urls
-    JOIN industry_modules
-        ON industry_module_urls.industry_module_id = industry_modules.id
-    JOIN industries
-        ON industry_modules.industry_id = industries.id
-    JOIN modules
-        ON industry_modules.module_id = modules.id
-    JOIN urls
-        ON industry_module_urls.url_id = urls.id
-    LEFT JOIN url_parameters
-        ON url_parameters.industry_module_url_id = industry_module_urls.id
+        "industryModuleUrls"."ID" AS industry_module_url_id,
+        "industries"."NAME" AS industry_name,
+        "modules"."NAME" AS module_name,
+        "urls"."URL" AS url,
+        "urlParameters"."PARAM_NAME" AS param_name,
+        "urlParameters"."CSS_PATH" AS css_path,
+        "urlParameters"."TRANSFORMERS" AS transformers
+    FROM "industryModuleUrls"
+    JOIN "industryModules"
+        ON "industryModuleUrls"."INDUSTRY_MODULE_ID" = "industryModules"."ID"
+    JOIN "industries"
+        ON "industryModules"."INDUSTRY_ID" = "industries"."ID"
+    JOIN "modules"
+        ON "industryModules"."MODULE_ID" = "modules"."ID"
+    JOIN "urls"
+        ON "industryModuleUrls"."URL_ID" = "urls"."ID"
+    LEFT JOIN "urlParameters"
+        ON "urlParameters"."INDUSTRY_MODULE_URL_ID" = "industryModuleUrls"."ID"
     """
 
 def get_latest_dom_signature():
     return """
-    SELECT signature FROM signatures
-    WHERE industry_module_url_id = %s
-    ORDER BY last_checked DESC
+    SELECT "SIGNATURE" AS signature FROM "signatures"
+    WHERE "INDUSTRY_MODULE_URL_ID" = %s
+    ORDER BY "LAST_CHECKED" DESC
     LIMIT 1
     """
 
 def save_dom_signature():
     return """
-    INSERT INTO signatures (industry_module_url_id, signature, last_checked, last_updated)
+    INSERT INTO "signatures" ("INDUSTRY_MODULE_URL_ID", "SIGNATURE", "LAST_CHECKED", "LAST_UPDATED")
     VALUES (%s, %s, %s, %s)
-    ON CONFLICT (industry_module_url_id)
-    DO UPDATE SET signature = EXCLUDED.signature, last_checked = EXCLUDED.last_checked;
+    ON CONFLICT ("INDUSTRY_MODULE_URL_ID")
+    DO UPDATE SET "SIGNATURE" = EXCLUDED."SIGNATURE", "LAST_CHECKED" = EXCLUDED."LAST_CHECKED";
     """
 
 def update_last_checked():
     return """
-    UPDATE signatures
-    SET last_checked = %s
-    WHERE industry_module_url_id = %s
+    UPDATE "signatures" SET "LAST_CHECKED" = %s
+    WHERE "INDUSTRY_MODULE_URL_ID" = %s
+    """
+
+def get_industry_module_id():
+    return """
+    SELECT im."ID" AS id
+    FROM "industryModules" im
+    JOIN "industries" i ON im."INDUSTRY_ID" = i."ID"
+    JOIN "modules" m ON im."MODULE_ID" = m."ID"
+    WHERE i."NAME" = %s AND m."NAME" = %s
+    """
+
+def get_keywords_for_industry_module():
+    return """
+    SELECT "KEYWORD" AS keyword FROM "industryModuleKeywords"
+    WHERE "INDUSTRY_MODULE_ID" = %s
     """

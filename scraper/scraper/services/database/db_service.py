@@ -5,7 +5,9 @@ from .db import (
     get_urls_with_params,
     get_latest_dom_signature,
     save_dom_signature,
-    update_last_checked
+    update_last_checked,
+    get_keywords_for_industry_module,
+    get_industry_module_id
 )
 from collections import defaultdict
 from datetime import datetime
@@ -19,11 +21,12 @@ class DBService:
         return self.db
 
     # --- URLs with parameters ---
+
     def get_urls_with_params(self):
         rows = self.db.execute_query(get_urls_with_params())
-        return self._group_params(rows)
+        return self.group_params(rows)
 
-    def _group_params(self, rows):
+    def group_params(self, rows):
         url_map = {}
         params_map = defaultdict(list)
         for row in rows:
@@ -43,6 +46,7 @@ class DBService:
         return url_map, params_map
 
     # --- Signature functions ---
+
     def get_latest_dom_signature(self, industry_module_url_id):
         result = self.db.execute_query(get_latest_dom_signature(), (industry_module_url_id,))
         return result[0]["signature"] if result else None
@@ -54,3 +58,15 @@ class DBService:
     def update_last_checked(self, industry_module_url_id):
         now = datetime.now()
         self.db.execute_update(update_last_checked(), (now, industry_module_url_id)) 
+
+    # --- Keywords functions ---
+
+    def get_industry_module_id(self, industry_name, module_name):
+        print("fethcing 1")
+        result = self.db.execute_query(get_industry_module_id(), (industry_name, module_name))
+        print("fethcing 2", result)
+        return result[0]["id"] if result else None
+    
+    def get_keywords(self, industry_module_id):
+        rows = self.db.execute_query(get_keywords_for_industry_module(), (industry_module_id,))
+        return [row["keyword"] for row in rows]

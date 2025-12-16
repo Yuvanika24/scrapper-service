@@ -1,9 +1,14 @@
 INDUSTRY_URL_ID = "industry_module_url_id"
 INDUSTRY_NAME = "industry_name"
 MODULE_NAME = "module_name"
-PARAMETER_CONFIGS = "paramter_configs"
+INDUSTRY_MODULE_ID = "industry_module_id"
+PARAMETER_CONFIGS = "parameter_configs"
 URL = "url"
 SCRAPED_DATA = "scraped_data"
+CONTENT = "content"
+KEYWORD = "keyword"
+XPATH = "xpath"
+SOURCE = "source"
 
 HEADERS = {
     "User-Agent": (

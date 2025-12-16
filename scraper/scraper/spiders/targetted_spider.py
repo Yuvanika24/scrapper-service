@@ -1,15 +1,25 @@
 import scrapy, json
 from scraper.services.database.db_service import DBService
-from scraper.transformers.transformers import TRANSFORMER_FUNCTIONS
+from transformers.transformers import TRANSFORMER_FUNCTIONS
 from scraper.services.signature_service import SignatureService
-from scraper.items import GenericScrapedItem
+from scraper.items import TargettedScrapedItem
 from scraper.constants import INDUSTRY_URL_ID, INDUSTRY_NAME, MODULE_NAME, PARAMETER_CONFIGS, URL, SCRAPED_DATA, HEADERS
 
-class GenericSpider(scrapy.Spider):
-    name = "generic_spider"
+class TargettedSpider(scrapy.Spider):
+    name = "targetted_spider"
+
+    custom_settings = {
+        "FEEDS": {
+            "output/targetted.json": {
+                "format": "json",
+                "encoding": "utf8",
+                "indent": 4,
+            }
+        }
+    }
 
     def start_requests(self):
-        print("Start Spider requests")
+        print("Start Targetted Spider requests")
 
         self.db_service = DBService()
         self.signature_service = SignatureService(self.db_service)
@@ -76,7 +86,7 @@ class GenericSpider(scrapy.Spider):
         print(json.dumps(processed_data, indent=2, ensure_ascii=False))
 
         # Yield item
-        item = GenericScrapedItem()
+        item = TargettedScrapedItem()
         item[INDUSTRY_NAME] = industry_name
         item[MODULE_NAME] = module_name
         item[URL] = response.url

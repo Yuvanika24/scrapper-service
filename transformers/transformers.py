@@ -9,12 +9,11 @@ def to_float(value):
     except ValueError:
         return None
 
-def text_clean(value):
-    if isinstance(value, str):
-        return value.replace("\n", " ").replace("\r", " ").strip()
-    return value
+def text_clean(text: str) -> str:
+    text = re.sub(r"\s+", " ", text.strip())
+    return text[:500]
 
 TRANSFORMER_FUNCTIONS = {
     "to_float": to_float,
-    "text_clean": text_clean,
+    "text_clean": text_clean
 }
