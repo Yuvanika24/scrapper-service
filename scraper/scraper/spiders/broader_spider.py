@@ -3,6 +3,7 @@ from scraper.items import BroaderScrapedItem
 from scraper.services.database.db_service import DBService
 from scraper.services.cse_service import get_cse_results
 from scraper.services.xpath_extractor import scrape_page_with_xpath
+from scraper.services.image_extractor import extract_content_images
 from scraper.constants import HEADERS, INDUSTRY_MODULE_ID, INDUSTRY_NAME, MODULE_NAME, URL, KEYWORD, XPATH, CONTENT, SOURCE
 
 class BroaderSpider(scrapy.Spider):
@@ -14,6 +15,7 @@ class BroaderSpider(scrapy.Spider):
                 "format": "json",
                 "encoding": "utf8",
                 "indent": 4,
+                "overwrite": True
             }
         }
     }
@@ -27,22 +29,31 @@ class BroaderSpider(scrapy.Spider):
     def start_requests(self):
         print("Start Broader Spider requests")
 
-        #single call
-        industry_module_id = self.db_service.get_industry_module_id(self.industry, self.module)
-        keywords = self.db_service.get_keywords(industry_module_id)
+        industry_module_id, keywords = self.db_service.get_keywords_for_industry_module(
+            self.industry,
+            self.module
+        )
 
         print(f"Keywords for Industry: {self.industry}, Module: {self.module}")
         print("industry_module_id:", industry_module_id)
 
+        static_urls = [
+            "https://www.grandviewresearch.com/industry-analysis/solar-panels-market",
+            "https://www.precedenceresearch.com/solar-pv-panels-market",
+            "https://www.marketresearchfuture.com/reports/solar-panel-market-3147",
+            "https://www.fortunebusinessinsights.com/solar-panel-market-102888",
+            "https://www.alliedmarketresearch.com/solar-panel-market"
+        ]
+
         for keyword in keywords:
-            try:
-                links = get_cse_results(keyword)
-            except Exception as e:
-                self.logger.error(f"CSE failed for {keyword}: {e}")
-                continue
-
-            for url in links:
-
+            # try:
+            #     links = get_cse_results(keyword)
+            # except Exception as e:
+            #     self.logger.error(f"CSE failed for {keyword}: {e}")
+            #     continue
+            #
+            # for url in links:
+            for url in static_urls:
                 yield scrapy.Request(
                     url=url,
                     meta={"keyword": keyword, "industry_module_id": industry_module_id},
@@ -57,7 +68,8 @@ class BroaderSpider(scrapy.Spider):
 
         print("response:", response)
 
-        results = scrape_page_with_xpath(response.url, keyword)
+        results = scrape_page_with_xpath(response, keyword)
+        image_urls = extract_content_images(response)
 
         print(json.dumps(results, indent=2, ensure_ascii=False))
 
@@ -71,5 +83,6 @@ class BroaderSpider(scrapy.Spider):
             item[KEYWORD] = res["keyword"]
             item[XPATH] = res["xpath"]
             item[CONTENT] = res["content"]
+            item["image_urls"] = image_urls
 
             yield item

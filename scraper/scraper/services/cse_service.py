@@ -21,8 +21,9 @@ def get_cse_results(query, num=10, start=1):
     
     # Send request to Google CSE
     resp = requests.get(url, timeout=10)
+    print("Logging error:", resp.text)
     resp.raise_for_status()
-    
+
     data = resp.json()
 
     return [item["link"] for item in data.get("items", [])]

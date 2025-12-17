@@ -5,6 +5,7 @@ class TargettedScrapedItem(scrapy.Item):
     module_name = scrapy.Field()
     url = scrapy.Field()
     scraped_data = scrapy.Field()
+    image_urls = scrapy.Field()
 
 class BroaderScrapedItem(scrapy.Item):
     industry_name = scrapy.Field()
@@ -15,3 +16,4 @@ class BroaderScrapedItem(scrapy.Item):
     keyword = scrapy.Field()
     xpath = scrapy.Field()
     content = scrapy.Field()
+    image_urls = scrapy.Field()

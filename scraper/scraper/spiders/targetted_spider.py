@@ -4,6 +4,7 @@ from scraper.services.signature_service import SignatureService
 from scraper.items import TargettedScrapedItem
 from scraper.constants import INDUSTRY_URL_ID, INDUSTRY_NAME, MODULE_NAME, PARAMETER_CONFIGS, URL, SCRAPED_DATA, HEADERS
 from scraper.transformers.transformers import TRANSFORMER_FUNCTIONS
+from scraper.services.image_extractor import extract_content_images
 
 class TargettedSpider(scrapy.Spider):
     name = "targetted_spider"
@@ -14,6 +15,7 @@ class TargettedSpider(scrapy.Spider):
                 "format": "json",
                 "encoding": "utf8",
                 "indent": 4,
+                "overwrite": True
             }
         }
     }
@@ -85,12 +87,16 @@ class TargettedSpider(scrapy.Spider):
 
         print(json.dumps(processed_data, indent=2, ensure_ascii=False))
 
+        image_urls = extract_content_images(response)
+
         # Yield item
         item = TargettedScrapedItem()
         item[INDUSTRY_NAME] = industry_name
         item[MODULE_NAME] = module_name
         item[URL] = response.url
         item[SCRAPED_DATA] = processed_data
+        item["image_urls"] = image_urls
+
         yield item
 
     def apply_transformers(self, value, transformer_string):

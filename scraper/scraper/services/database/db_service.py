@@ -61,6 +61,11 @@ class DBService:
 
     # --- Keywords functions ---
 
+    def get_keywords_for_industry_module(self, industry, module):
+        industry_module_id = self.get_industry_module_id(industry, module)
+        keywords = self.get_keywords(industry_module_id)
+        return industry_module_id, keywords
+
     def get_industry_module_id(self, industry_name, module_name):
         print("fethcing 1")
         result = self.db.execute_query(get_industry_module_id(), (industry_name, module_name))
