@@ -1,4 +1,5 @@
-# Low-level DB queries for scraper application.
+
+# --- URLs with parameters ---
 
 def get_urls_with_params():
     return """
@@ -22,6 +23,8 @@ def get_urls_with_params():
     LEFT JOIN "urlParameters"
         ON "urlParameters"."INDUSTRY_MODULE_URL_ID" = "industryModuleUrls"."ID"
     """
+
+# --- Signature queries ---
 
 def get_latest_dom_signature():
     return """
@@ -53,9 +56,16 @@ def get_industry_module_id():
     JOIN "modules" m ON im."MODULE_ID" = m."ID"
     WHERE i."NAME" = %s AND m."NAME" = %s
     """
+# --- Keywords queries ---
 
 def get_keywords_for_industry_module():
     return """
     SELECT "KEYWORD" AS keyword FROM "industryModuleKeywords"
     WHERE "INDUSTRY_MODULE_ID" = %s
+    """
+# --- target urls ---
+
+def get_all_urls():
+    return """
+    SELECT "URL" AS url FROM "urls"
     """

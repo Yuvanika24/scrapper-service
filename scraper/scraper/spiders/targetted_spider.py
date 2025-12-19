@@ -4,7 +4,6 @@ from scraper.services.signature_service import SignatureService
 from scraper.items import TargettedScrapedItem
 from scraper.constants import INDUSTRY_URL_ID, INDUSTRY_NAME, MODULE_NAME, PARAMETER_CONFIGS, URL, SCRAPED_DATA, HEADERS
 from scraper.transformers.transformers import TRANSFORMER_FUNCTIONS
-from scraper.services.image_extractor import extract_content_images
 
 class TargettedSpider(scrapy.Spider):
     name = "targetted_spider"
@@ -63,7 +62,6 @@ class TargettedSpider(scrapy.Spider):
 
         self.logger.info(f"Scraping URL ID {industry_module_url_id} (new run or unchanged DOM)")
 
-        # Extract & transform data
         processed_data = {}
 
         for param in params:
@@ -71,15 +69,25 @@ class TargettedSpider(scrapy.Spider):
             raw_html = None
 
             if selector:
-                # XPath selector
-                if selector.startswith("//"):
-                    raw_html = response.xpath(selector).get()
-                # CSS selector
+                selector = selector.strip()
+
+                is_xpath = selector.startswith("//") or selector.startswith("(")
+
+                if "/@" in selector:
+                    raw_html = ",".join(
+                        response.xpath(selector).getall() if is_xpath else response.css(selector).getall()
+                    )
                 else:
-                    raw_html = response.css(selector).xpath("string()").get()
+                    nodes = response.xpath(selector) if is_xpath else response.css(selector)
+                    texts = nodes.xpath(".//text()").getall()
+                    raw_html = " ".join(t.strip() for t in texts if t.strip())
+
 
             if raw_html:
                 raw_html = raw_html.strip()
+            if raw_html and raw_html.startswith("/"):
+                raw_html = response.urljoin(raw_html)
+
             transformer_string = param.get("transformer")
             processed_data[param['param_name']] = self.apply_transformers(
                 raw_html, transformer_string
@@ -87,7 +95,7 @@ class TargettedSpider(scrapy.Spider):
 
         print(json.dumps(processed_data, indent=2, ensure_ascii=False))
 
-        image_urls = extract_content_images(response)
+        processed_data = dict(sorted(processed_data.items()))
 
         # Yield item
         item = TargettedScrapedItem()
@@ -95,7 +103,6 @@ class TargettedSpider(scrapy.Spider):
         item[MODULE_NAME] = module_name
         item[URL] = response.url
         item[SCRAPED_DATA] = processed_data
-        item["image_urls"] = image_urls
 
         yield item
 

@@ -11,7 +11,7 @@ def to_float(value):
 
 def text_clean(text: str) -> str:
     text = re.sub(r"\s+", " ", text.strip())
-    return text[:500]
+    return text
 
 TRANSFORMER_FUNCTIONS = {
     "to_float": to_float,

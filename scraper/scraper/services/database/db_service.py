@@ -1,5 +1,3 @@
-# High-level DB service for scraper application.
-
 from .connection import DatabaseConnection
 from .db import (
     get_urls_with_params,
@@ -7,10 +5,12 @@ from .db import (
     save_dom_signature,
     update_last_checked,
     get_keywords_for_industry_module,
-    get_industry_module_id
+    get_industry_module_id,
+    get_all_urls,
 )
 from collections import defaultdict
 from datetime import datetime
+from scraper.utils.url_utils import normalize_url
 
 class DBService:
     def __init__(self):
@@ -67,11 +67,21 @@ class DBService:
         return industry_module_id, keywords
 
     def get_industry_module_id(self, industry_name, module_name):
-        print("fethcing 1")
         result = self.db.execute_query(get_industry_module_id(), (industry_name, module_name))
-        print("fethcing 2", result)
         return result[0]["id"] if result else None
     
     def get_keywords(self, industry_module_id):
         rows = self.db.execute_query(get_keywords_for_industry_module(), (industry_module_id,))
         return [row["keyword"] for row in rows]
+
+    # --- Normalized urls ---
+    
+    def get_all_targetted_urls(self):
+        rows = self.db.execute_query(get_all_urls())
+
+        return [
+            normalize_url(row["url"])
+            for row in rows
+            if row.get("url")
+        ]
+
