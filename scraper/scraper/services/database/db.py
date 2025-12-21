@@ -65,7 +65,16 @@ def get_keywords_for_industry_module():
     """
 # --- target urls ---
 
-def get_all_urls():
+def get_targetted_urls():
     return """
-    SELECT "URL" AS url FROM "urls"
+    SELECT u."URL" AS url
+    FROM "industryModules" im
+    JOIN "industries" i ON i."ID" = im."INDUSTRY_ID"
+    JOIN "modules" m ON m."ID" = im."MODULE_ID"
+    JOIN "industryModuleUrls" imu ON imu."INDUSTRY_MODULE_ID" = im."ID"
+    JOIN "urls" u ON u."ID" = imu."URL_ID"
+    WHERE i."NAME" = %s
+      AND m."NAME" = %s
     """
+
+

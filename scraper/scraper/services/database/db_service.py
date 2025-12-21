@@ -6,7 +6,7 @@ from .db import (
     update_last_checked,
     get_keywords_for_industry_module,
     get_industry_module_id,
-    get_all_urls,
+    get_targetted_urls
 )
 from collections import defaultdict
 from datetime import datetime
@@ -76,12 +76,16 @@ class DBService:
 
     # --- Normalized urls ---
     
-    def get_all_targetted_urls(self):
-        rows = self.db.execute_query(get_all_urls())
+    def get_targetted_urls(self, industry, module):
+        rows = self.db.execute_query(
+            get_targetted_urls(),
+            (industry, module)
+        )
 
-        return [
+        return {
             normalize_url(row["url"])
             for row in rows
             if row.get("url")
-        ]
+        }
+
 

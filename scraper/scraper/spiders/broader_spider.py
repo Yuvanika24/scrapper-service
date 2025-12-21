@@ -26,10 +26,18 @@ class BroaderSpider(scrapy.Spider):
         self.module = module
         self.db_service = DBService()
 
-        targeted_urls = self.db_service.get_all_targetted_urls()
-        self.targeted_url_set = set(targeted_urls)
+        self.targeted_url_set = self.db_service.get_targetted_urls(
+            self.industry,
+            self.module
+        )
 
-        self.logger.info("Loaded %d targeted URLs for dedup",len(self.targeted_url_set))
+        self.logger.info(
+            "Loaded %d targeted URLs for %s | %s",
+            len(self.targeted_url_set),
+            self.industry,
+            self.module
+        )
+
 
     def start_requests(self):
         print("Start Broader Spider requests")
