@@ -2,7 +2,7 @@ BOT_NAME = 'scraper'
 SPIDER_MODULES = ['scraper.spiders']
 NEWSPIDER_MODULE = 'scraper.spiders'
 
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'ERROR'
 TELNETCONSOLE_ENABLED = False
 ROBOTSTXT_OBEY= False
 FEED_EXPORT_ENCODING = 'utf-8'

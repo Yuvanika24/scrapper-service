@@ -1,7 +1,14 @@
 from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
+
 from scraper.spiders.targetted_spider import TargettedSpider
 from scraper.spiders.broader_spider import BroaderSpider
-from scrapy.utils.project import get_project_settings
+
+from scraper.job_builder.targetted_job_builder import TargettedJobBuilder
+from scraper.job_builder.broader_job_builder import BroaderJobBuilder
+
+from scraper.database.db_service import DBService
+from scraper.services.signature_service import SignatureService
 
 def main():
     print("Choose Industry:\n1. Solar Panel\n2. Semiconductor")
@@ -13,7 +20,7 @@ def main():
         case "2":
             industry = "Semiconductor"
         case _:
-            print("Invalid choice. Exiting.")
+            print("Invalid choice.")
             return
 
     print("\nChoose Module:\n1. Market Analysis\n2. Competitor Analysis")
@@ -25,22 +32,24 @@ def main():
         case "2":
             module = "Competitor Analysis"
         case _:
-            print("Invalid choice. Exiting.")
+            print("Invalid choice.")
             return
 
+    settings = get_project_settings()
+    process = CrawlerProcess(settings)
 
-    if industry == "Solar Panel" and module == "Market Analysis":
-        
-        settings = get_project_settings()
+    db_service = DBService()
+    signature_service = SignatureService(db_service)
 
-        process = CrawlerProcess(settings)
-        process.crawl(TargettedSpider)
-        process.crawl(BroaderSpider, industry=industry, module=module)
-        process.start()
+    # Targetted
+    targetted_jobs = TargettedJobBuilder(industry=industry, module=module).build()
+    process.crawl(TargettedSpider, jobs=targetted_jobs, signature_service=signature_service)
 
-    else:
-        print(f"No logic mapped for Industry: {industry}, Module: {module} yet. Exiting.")
+    # Broader
+    broader_jobs = BroaderJobBuilder(industry=industry, module=module).build()
+    process.crawl(BroaderSpider, jobs=broader_jobs, industry=industry, module=module)
+
+    process.start()
 
 if __name__ == "__main__":
     main()
-

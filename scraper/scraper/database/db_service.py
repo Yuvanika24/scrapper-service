@@ -6,11 +6,12 @@ from .db import (
     update_last_checked,
     get_keywords_for_industry_module,
     get_industry_module_id,
-    get_all_urls,
+    get_targetted_urls
 )
 from collections import defaultdict
 from datetime import datetime
 from scraper.utils.url_utils import normalize_url
+from scraper.constants import CSS_PATH, INDUSTRY_MODULE_URL_ID, MODULE_NAME, PARAM_NAME, TRANSFORMER, URL, INDUSTRY_NAME
 
 class DBService:
     def __init__(self):
@@ -20,7 +21,7 @@ class DBService:
     def get_db_connection(self):
         return self.db
 
-    # --- URLs with parameters ---
+    # --- fetch URLs with parameters ---
 
     def get_urls_with_params(self):
         rows = self.db.execute_query(get_urls_with_params())
@@ -30,18 +31,18 @@ class DBService:
         url_map = {}
         params_map = defaultdict(list)
         for row in rows:
-            url_id = row["industry_module_url_id"]
+            url_id = row[INDUSTRY_MODULE_URL_ID]
             if url_id not in url_map:
                 url_map[url_id] = {
-                    "url": row["url"],
-                    "industry_name": row["industry_name"],
-                    "module_name": row["module_name"]
+                    URL: row[URL],
+                    INDUSTRY_NAME: row[INDUSTRY_NAME],
+                    MODULE_NAME: row[MODULE_NAME]
                 }
-            if row["param_name"]:
+            if row[PARAM_NAME]:
                 params_map[url_id].append({
-                    "param_name": row["param_name"],
-                    "css_path": row["css_path"],
-                    "transformer": row["transformers"]
+                    PARAM_NAME: row[PARAM_NAME],
+                    CSS_PATH: row[CSS_PATH],
+                    TRANSFORMER: row["transformers"]
                 })
         return url_map, params_map
 
@@ -76,12 +77,13 @@ class DBService:
 
     # --- Normalized urls ---
     
-    def get_all_targetted_urls(self):
-        rows = self.db.execute_query(get_all_urls())
+    def get_targetted_urls(self, industry, module):
+        rows = self.db.execute_query(get_targetted_urls(), (industry, module))
 
-        return [
+        return {
             normalize_url(row["url"])
             for row in rows
             if row.get("url")
-        ]
+        }
+
 
