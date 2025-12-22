@@ -1,9 +1,3 @@
-"""
-    Normalize URL for dedup comparison.
-    - remove query params
-    - remove fragments
-    - remove trailing slash
-"""
 from urllib.parse import urlparse, urlunparse
 
 def normalize_url(url: str) -> str:

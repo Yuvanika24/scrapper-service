@@ -1,8 +1,8 @@
 from lxml import html
-from scraper.transformers.transformers import text_clean
+from scraper.utils.transformers import text_clean
 
 def scrape_page_with_xpath(response, keyword):
-    tree = html.fromstring(response.text)
+    tree = html.fromstring(response.body)
     phrase = keyword.lower().strip()
     words = phrase.split()
 

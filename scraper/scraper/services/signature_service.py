@@ -1,6 +1,6 @@
 import json
 import hashlib
-from scraper.services.database.db_service import DBService
+from scraper.database.db_service import DBService
 
 class SignatureService:
     def __init__(self, db_service: DBService):
@@ -10,17 +10,8 @@ class SignatureService:
         mini_dom = {}
 
         for param in params:
-            selector = param.get("css_path")
-#           Debugging output
-#             if selector:
-#                 print("Selector:", selector)
-#                 sel = selector.strip()
-#                 is_xpath = sel.startswith("//") or sel.startswith("(")
+            selector = param.css_path
 
-#                 print(
-#                     "Matches count:",
-#                     len(response.xpath(sel)) if is_xpath else len(response.css(sel))
-# )
             if not selector:
                 continue
             try:
@@ -31,13 +22,13 @@ class SignatureService:
 
                 tags = [el.root.tag for el in selected_elements] if selected_elements else []
 
-                mini_dom[param['param_name']] = {
+                mini_dom[param.param_name] = {
                     "selector": selector,
                     "count": len(selected_elements),
                     "tags": tags
                 }
             except Exception as e:
-                mini_dom[param['param_name']] = {
+                mini_dom[param.param_name] = {
                     "selector": selector,
                     "count": 0,
                     "tags": [],

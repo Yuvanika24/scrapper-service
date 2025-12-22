@@ -1,7 +1,7 @@
 # DB connection and basic query execution.
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from ...config import DB_CONFIG
+from ..config import DB_CONFIG
 
 class DatabaseConnection:
     def __init__(self):

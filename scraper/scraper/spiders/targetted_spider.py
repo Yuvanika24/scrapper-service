@@ -1,9 +1,7 @@
-import scrapy, json
-from scraper.services.database.db_service import DBService
-from scraper.services.signature_service import SignatureService
+import scrapy
 from scraper.items import TargettedScrapedItem
-from scraper.constants import INDUSTRY_URL_ID, INDUSTRY_NAME, MODULE_NAME, PARAMETER_CONFIGS, URL, SCRAPED_DATA, HEADERS
-from scraper.transformers.transformers import TRANSFORMER_FUNCTIONS
+from scraper.utils.transformers import TRANSFORMER_FUNCTIONS
+from scraper.constants import INDUSTRY_MODULE_URL_ID, INDUSTRY_NAME, MODULE_NAME, PARAMETER_CONFIGS, URL, SCRAPED_DATA, HEADERS
 
 class TargettedSpider(scrapy.Spider):
     name = "targetted_spider"
@@ -19,81 +17,77 @@ class TargettedSpider(scrapy.Spider):
         }
     }
 
+    def __init__(self, jobs=None, signature_service=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.jobs = jobs or []
+        self.signature_service = signature_service
+
     def start_requests(self):
-        print("Start Targetted Spider requests")
+        print("Starting target spider requests")
 
-        self.db_service = DBService()
-        self.signature_service = SignatureService(self.db_service)
-
-        url_map, params_map = self.db_service.get_urls_with_params()
-
-        # Yield all URLs
-        for url_id, url_data in url_map.items():
+        for job in self.jobs:
+            # Yield all URLs
             yield scrapy.Request(
-                url=url_data["url"],
-                meta={
-                    INDUSTRY_URL_ID: url_id,
-                    INDUSTRY_NAME: url_data[INDUSTRY_NAME],
-                    MODULE_NAME: url_data[MODULE_NAME],
-                    PARAMETER_CONFIGS: params_map[url_id]
-                },
-                callback=self.parse,
+                url=job.url,
                 headers=HEADERS,
-                dont_filter=True
+                dont_filter=True,
+                callback=self.parse,
+                meta={
+                    INDUSTRY_MODULE_URL_ID: job.industry_module_url_id,
+                    INDUSTRY_NAME: job.industry_name,
+                    MODULE_NAME: job.module_name,
+                    PARAMETER_CONFIGS: job.params
+                }
             )
 
     def parse(self, response):
-        print("Parsing response for URL:", response.url)
 
         params = response.meta[PARAMETER_CONFIGS]
-        industry_module_url_id = response.meta[INDUSTRY_URL_ID]
+        industry_module_url_id = response.meta[INDUSTRY_MODULE_URL_ID]
         industry_name = response.meta[INDUSTRY_NAME]
         module_name = response.meta[MODULE_NAME]
 
         # Mini DOM + signature
-        mini_dom = self.signature_service.build_mini_dom(response, params)
-        new_signature = self.signature_service.calculate_signature(mini_dom)
+        if self.signature_service:
+            mini_dom = self.signature_service.build_mini_dom(response, params)
+            new_signature = self.signature_service.calculate_signature(mini_dom)
 
-        dom_changed = self.signature_service.compare_and_update(industry_module_url_id, new_signature)
-        print("DOM Changed:", dom_changed)
-        if dom_changed:
-            self.logger.info(f"DOM changed for URL ID {industry_module_url_id}. Skipping scrape.")
-            return
+            dom_changed = self.signature_service.compare_and_update(
+                industry_module_url_id,
+                new_signature
+            )
 
-        self.logger.info(f"Scraping URL ID {industry_module_url_id} (new run or unchanged DOM)")
+            if dom_changed:
+                self.logger.info(f"DOM changed for URL ID {industry_module_url_id}. Skipping scrape.")
+                return
 
         processed_data = {}
 
         for param in params:
-            selector = param.get("css_path")
+            selector = param.css_path
             raw_html = None
 
             if selector:
                 selector = selector.strip()
-
                 is_xpath = selector.startswith("//") or selector.startswith("(")
 
                 if "/@" in selector:
                     raw_html = ",".join(
-                        response.xpath(selector).getall() if is_xpath else response.css(selector).getall()
+                        response.xpath(selector).getall()
+                        if is_xpath else response.css(selector).getall()
                     )
                 else:
                     nodes = response.xpath(selector) if is_xpath else response.css(selector)
                     texts = nodes.xpath(".//text()").getall()
                     raw_html = " ".join(t.strip() for t in texts if t.strip())
 
-
             if raw_html:
                 raw_html = raw_html.strip()
-            if raw_html and raw_html.startswith("/"):
-                raw_html = response.urljoin(raw_html)
+                if raw_html.startswith("/"):
+                    raw_html = response.urljoin(raw_html)
 
-            transformer_string = param.get("transformer")
-            processed_data[param['param_name']] = self.apply_transformers(
-                raw_html, transformer_string
-            )
-
-        print(json.dumps(processed_data, indent=2, ensure_ascii=False))
+            processed_data[param.param_name] = self.apply_transformers(
+                raw_html, param.transformer)
 
         processed_data = dict(sorted(processed_data.items()))
 
