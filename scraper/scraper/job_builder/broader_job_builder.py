@@ -34,7 +34,7 @@ class BroaderJobBuilder:
                 continue
 
             for url in links:
-                norm_url = url if url in targeted_url_set else normalize_url(url)
+                norm_url = normalize_url(url)
                 if norm_url in targeted_url_set:
                     continue
 
