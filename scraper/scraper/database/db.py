@@ -22,6 +22,8 @@ def get_urls_with_params():
         ON "industryModuleUrls"."URL_ID" = "urls"."ID"
     LEFT JOIN "urlParameters"
         ON "urlParameters"."INDUSTRY_MODULE_URL_ID" = "industryModuleUrls"."ID"
+    WHERE "industries"."NAME" = %s 
+      AND "modules"."NAME" = %s
     """
 
 # --- Signature queries ---

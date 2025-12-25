@@ -14,7 +14,10 @@ class UrlDataService:
     def get_targeted_urls(self):
         key = f"{self.industry}_{self.module}"
         if key not in self._cache:
-            url_map, params_map = self.db.get_urls_with_params()
+            url_map, params_map = self.db.get_urls_with_params(
+                self.industry,
+                self.module
+            )
             self._cache[key] = {
                 "url_map": url_map,
                 "params_map": params_map,

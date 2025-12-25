@@ -16,4 +16,4 @@ class BroaderScrapedItem(scrapy.Item):
     keyword = scrapy.Field()
     xpath = scrapy.Field()
     content = scrapy.Field()
-    image_urls = scrapy.Field()
+    match_count = scrapy.Field()  # for debugging

@@ -23,8 +23,8 @@ class DBService:
 
     # --- fetch URLs with parameters ---
 
-    def get_urls_with_params(self):
-        rows = self.db.execute_query(get_urls_with_params())
+    def get_urls_with_params(self, industry, module):
+        rows = self.db.execute_query(get_urls_with_params(), (industry, module))
         return self.group_params(rows)
 
     def group_params(self, rows):

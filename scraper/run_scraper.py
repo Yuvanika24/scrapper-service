@@ -11,7 +11,7 @@ from scraper.database.db_service import DBService
 from scraper.services.signature_service import SignatureService
 
 def main():
-    print("Choose Industry:\n1. Solar Panel\n2. Semiconductor")
+    print("Choose Industry:\n1. Solar Panel\n2. Semiconductor\n3. Battery")
     industry_choice = input("Enter choice: ")
 
     match industry_choice:
@@ -19,11 +19,13 @@ def main():
             industry = "Solar Panel"
         case "2":
             industry = "Semiconductor"
+        case "3":
+            industry = "Battery"
         case _:
             print("Invalid choice.")
             return
 
-    print("\nChoose Module:\n1. Market Analysis\n2. Competitor Analysis")
+    print("\nChoose Module:\n1. Market Analysis\n2. Competitor Analysis\n3. Market Feasibilty\n4. Technical Implementation\n5. Compliance & Safety")
     module_choice = input("Enter choice: ")
 
     match module_choice:
@@ -31,6 +33,12 @@ def main():
             module = "Market Analysis"
         case "2":
             module = "Competitor Analysis"
+        case "3":
+            module = "Market Feasibilty"
+        case "4":
+            module = "Technical Implementation"
+        case "5":
+            module = "Compliance Safety"
         case _:
             print("Invalid choice.")
             return

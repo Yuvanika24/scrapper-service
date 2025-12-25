@@ -27,6 +27,7 @@ class BroaderSpider(scrapy.Spider):
         print("Starting Broader Spider requests")
 
         for job in self.jobs:
+            self.logger.info("Requesting URL: %s", job.url)
             yield scrapy.Request(
                 url=job.url,
                 headers=HEADERS,
@@ -39,10 +40,11 @@ class BroaderSpider(scrapy.Spider):
             )
 
     def parse(self, response):
+        self.logger.info("Parsing URL: %s", response.url)
         keyword = response.meta[KEYWORD]
         industry_module_id = response.meta[INDUSTRY_MODULE_ID]
 
-        results = scrape_page_with_xpath(response, keyword)
+        results = scrape_page_with_xpath(response, keyword, self.module)
 
         #print(json.dumps(results, indent=2, ensure_ascii=False))
 
@@ -56,5 +58,6 @@ class BroaderSpider(scrapy.Spider):
             item[KEYWORD] = res[KEYWORD]
             item[XPATH] = res[XPATH]
             item[CONTENT] = res[CONTENT]
+            item["match_count"] = res["match_count"]  # for debugging
 
             yield item
